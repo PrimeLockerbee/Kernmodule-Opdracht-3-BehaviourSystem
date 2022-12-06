@@ -47,7 +47,7 @@ public class Blackboard
         {
             return (T)data;
         }
-        catch (Exception e)
+        catch
         {
             return default(T);
         }

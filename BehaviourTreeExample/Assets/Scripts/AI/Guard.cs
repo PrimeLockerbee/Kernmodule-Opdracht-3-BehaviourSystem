@@ -38,7 +38,9 @@ public class Guard : AICharacter
 
         IsSpotable is_PlayerSpottable = player.GetComponent<IsSpotable>();
 
-        BTBaseNode attackSequence = new BTSequence(b_BlackBoard, new BTIsTargetInRange(b_BlackBoard, player, f_AttackRange),new BTSequence(b_BlackBoard, new BTAnimate(b_BlackBoard, "Kick"),new BTWaitOnAnimationEnd(b_BlackBoard)));
+        BTBaseNode patrolTree = new BTSequence(b_BlackBoard, new BTTargetSpot(b_BlackBoard, is_PlayerSpottable, false), new BTAnimate(b_BlackBoard, "Rifle Walk", f_AnimationFadeTime), new BTPatrolNode(b_BlackBoard, f_MinDistance, patrolPosPoints.ToArray()));
+
+        BTBaseNode attackSequence = new BTSequence(b_BlackBoard, new BTIsTargetInRange(b_BlackBoard, player, f_AttackRange), new BTSequence(b_BlackBoard, new BTAnimate(b_BlackBoard, "Kick"), new BTWaitOnAnimationEnd(b_BlackBoard)));
 
         BTBaseNode chasingTree = new BTParallel(b_BlackBoard, new BTTargetFollow(b_BlackBoard, player, f_AttackRange), attackSequence);
 
@@ -60,11 +62,11 @@ public class Guard : AICharacter
                                                 )
                                             ));
 
-        BTBaseNode patrolTree = new BTSequence(b_BlackBoard, new BTTargetSpot(b_BlackBoard, is_PlayerSpottable, false), new BTAnimate(b_BlackBoard, "Rifle Walk", f_AnimationFadeTime), new BTPatrolNode(b_BlackBoard, f_MinDistance, patrolPosPoints.ToArray()));
 
-        bbn_Tree = new BTSelector(b_BlackBoard, findWeaponSequence, patrolTree);
 
-        bbn_Tree = attackSequence;
+        bbn_Tree = new BTSelector(b_BlackBoard, patrolTree, attackSequence, findWeaponSequence, chasingTree, whileInSight);
+
+        //bbn_Tree = findWeaponSequence;
     }
 
     protected override void InitializeBlackBoard()

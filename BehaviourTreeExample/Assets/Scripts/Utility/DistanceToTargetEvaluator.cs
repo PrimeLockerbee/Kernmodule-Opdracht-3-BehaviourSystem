@@ -34,7 +34,7 @@ public class DistanceToTargetEvaluator : UtilityEval
 
     protected override float GetValue()
     {
-        Vector3 objectPos = bb_BlackBoard.Get<MonoBehaviour>("CurrentSearchItem").transform.position;
+        Vector3 objectPos = bb_BlackBoard.Get<MonoBehaviour>("Current Search Item").transform.position;
         float distanceToObject = Vector3.Distance(t_ControllerTransform.position, objectPos);
 
         return distanceToObject;

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Assertions.Must;
 
-public class Player : MonoBehaviour, IDamageable
+public class Player : MonoBehaviour, IDamageable, IsSpotable, IsHealthUser
 {
     public Transform Camera;
     [SerializeField] private float rotationSpeed = 180f;
@@ -16,7 +16,12 @@ public class Player : MonoBehaviour, IDamageable
     private float hor = 0;
     private Vector3 moveDirection;
     private Collider mainCollider;
-    // Start is called before the first frame update
+
+    public bool b_IsSpotted { get; set; } = false;
+
+    public int i_CurrentHealth { get; private set; }
+    public int i_MaxHealth => 100;
+
     void Start()
     {
         rb = GetComponent<Rigidbody>();
