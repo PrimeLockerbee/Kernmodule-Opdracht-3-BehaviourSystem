@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Assertions.Must;
 
-public class Player : MonoBehaviour, IDamageable
+public class Player : Character, IDamageable, ISpottable
 {
     public Transform Camera;
     [SerializeField] private float rotationSpeed = 180f;
@@ -16,7 +16,10 @@ public class Player : MonoBehaviour, IDamageable
     private float hor = 0;
     private Vector3 moveDirection;
     private Collider mainCollider;
-    // Start is called before the first frame update
+
+    public bool isSpotted => spotters.Count > 0;
+    public List<GameObject> spotters { get; private set; } = new List<GameObject>();
+
     void Start()
     {
         rb = GetComponent<Rigidbody>();
@@ -103,6 +106,21 @@ public class Player : MonoBehaviour, IDamageable
         if (!animator.GetCurrentAnimatorStateInfo(0).IsName(animationName) && !animator.IsInTransition(0))
         {
             animator.CrossFade(animationName, fadeTime);
+        }
+    }
+
+    public void Spot(GameObject _spotter, bool _spotted)
+    {
+        if (_spotted)
+        {
+            spotters.Add(_spotter);
+        }
+        else
+        {
+            if (spotters.Contains(_spotter))
+            {
+                spotters.Remove(_spotter);
+            }
         }
     }
 }
