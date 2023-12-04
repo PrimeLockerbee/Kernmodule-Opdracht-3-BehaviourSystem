@@ -1,41 +1,80 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.AI;
 
-public class Guard : MonoBehaviour
+public class Guard : AICharacter
 {
-    private BTBaseNode tree;
-    private NavMeshAgent agent;
-    private Animator animator;
+    public bool isAlerted { get; private set; }
+
+    [SerializeField] private List<Transform> patrolPoints;
+    [SerializeField] private float minDistance;
+
+    [SerializeField] private float animationFadeTime;
+
+    private Transform player;
+    private float currentInSightRange;
+
+    [Range(-0.5f, 1f)]
+    [SerializeField] private float patrollingInSightRange;
+    [Range(-1f, 1f)]
+    [SerializeField] private float chasingInSightRange;
 
     private void Awake()
     {
         agent = GetComponent<NavMeshAgent>();
         animator = GetComponentInChildren<Animator>();
+        player = FindObjectOfType<Player>().transform;
     }
 
-    private void Start()
+    protected override void Start()
     {
-        //Create your Behaviour Tree here!
+        base.Start();
+        currentInSightRange = patrollingInSightRange;
+
+        BTBaseNode patrolNode = GeneratePatrolNode();
+
+        BTBaseNode patrolTree = new BTSequence(blackBoard,
+                            new BTChangeBlackBoardVariable(blackBoard, "StateMessage", "Patrolling"),
+                            new BTInvokeAction(blackBoard, () => currentInSightRange = patrollingInSightRange),
+                            new BTAnimate(blackBoard, "Rifle Walk", animationFadeTime),
+                            patrolNode);
+
+        tree = new BTSelector(blackBoard,
+              patrolTree
+              );
+
     }
 
-    private void FixedUpdate()
+    protected override void FixedUpdate()
     {
-        tree?.Run();
+        base.FixedUpdate();
     }
 
-    //private void OnDrawGizmos()
-    //{
-    //    Gizmos.color = Color.yellow;
-    //    Handles.color = Color.yellow;
-    //    Vector3 endPointLeft = viewTransform.position + (Quaternion.Euler(0, -ViewAngleInDegrees.Value, 0) * viewTransform.transform.forward).normalized * SightRange.Value;
-    //    Vector3 endPointRight = viewTransform.position + (Quaternion.Euler(0, ViewAngleInDegrees.Value, 0) * viewTransform.transform.forward).normalized * SightRange.Value;
+    private BTBaseNode GeneratePatrolNode()
+    {
+        List<Vector3> patrolPositions = patrolPoints.Select(t => t.position).ToList();
 
-    //    Handles.DrawWireArc(viewTransform.position, Vector3.up, Quaternion.Euler(0, -ViewAngleInDegrees.Value, 0) * viewTransform.transform.forward, ViewAngleInDegrees.Value * 2, SightRange.Value);
-    //    Gizmos.DrawLine(viewTransform.position, endPointLeft);
-    //    Gizmos.DrawLine(viewTransform.position, endPointRight);
+        BTMoveToPosition[] children = new BTMoveToPosition[patrolPositions.Count];
+        for (int i = 0; i < patrolPositions.Count; i++)
+        {
+            children[i] = new BTMoveToPosition(blackBoard, patrolPositions[i], minDistance);
+        }
 
-    //}
+        return new BTSequenceNoReset(blackBoard, children);
+    }
+
+    protected override void InitializeBlackboard()
+    {
+        blackBoard = new Blackboard();
+
+        // Components
+        blackBoard.AddOrUpdate("Base", this);
+        blackBoard.AddOrUpdate("ControllerObject", gameObject);
+        blackBoard.AddOrUpdate("ControllerTransform", transform);
+        blackBoard.AddOrUpdate("Agent", agent);
+        blackBoard.AddOrUpdate("Animator", animator);
+    }
 }

@@ -1,36 +1,48 @@
+using System;
 using System.Collections.Generic;
-using UnityEngine;
 
 
-public class Blackboard : MonoBehaviour
+public class Blackboard
 {
-    [SerializeReference] public List<BaseScriptableObject> baseSharedVariables = new List<BaseScriptableObject>();
+    private Dictionary<string, object> storedData = new Dictionary<string, object>();
 
-    private Dictionary<string, object> dictionary = new Dictionary<string, object>();
-
-    public T GetVariable<T>(string name) where T : BaseScriptableObject
+    public void AddOrUpdate(string _id, object _data)
     {
-        if (dictionary.ContainsKey(name))
+        if (storedData.ContainsKey(_id))
         {
-            return dictionary[name] as T;
+            storedData[_id] = _data;
         }
-        return null;
+        else
+        {
+            storedData.Add(_id, _data);
+        }
     }
 
-    public void AddVariable(string name, BaseScriptableObject variable)
+    public void RemoveEntry(string _id)
     {
-        dictionary.Add(name, variable);
+        if (storedData.ContainsKey(_id))
+        {
+            storedData.Remove(_id);
+        }
     }
 
-    [ContextMenu("Add FloatVariable")]
-    public void AddFloatVariable()
+    public bool Contains(string _id)
     {
-        baseSharedVariables.Add(new VariableFloat());
+        return storedData.ContainsKey(_id);
     }
 
-    [ContextMenu("Add GameObjectVariable")]
-    public void AddGameObjectVariable()
+    public T Get<T>(string _id)
     {
-        baseSharedVariables.Add(new VariableGameObject());
+        object data;
+        storedData.TryGetValue(_id, out data);
+
+        try
+        {
+            return (T)data;
+        }
+        catch (Exception e)
+        {
+            return default(T);
+        }
     }
 }
