@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Assertions.Must;
 
-public class Player : MonoBehaviour, IDamageable, IsSpotable, IsHealthUser
+public class Player : MonoBehaviour, IDamageable
 {
     public Transform Camera;
     [SerializeField] private float rotationSpeed = 180f;
@@ -16,12 +16,7 @@ public class Player : MonoBehaviour, IDamageable, IsSpotable, IsHealthUser
     private float hor = 0;
     private Vector3 moveDirection;
     private Collider mainCollider;
-
-    public bool b_IsSpotted { get; set; } = false;
-
-    public int i_CurrentHealth { get; private set; }
-    public int i_MaxHealth => 100;
-
+    // Start is called before the first frame update
     void Start()
     {
         rb = GetComponent<Rigidbody>();
@@ -60,6 +55,11 @@ public class Player : MonoBehaviour, IDamageable, IsSpotable, IsHealthUser
 
         bool isMoving = hor != 0 || vert != 0;
         ChangeAnimation(isMoving ? "Walk Crouch" : "Crouch Idle", isMoving ? 0.05f : 0.15f);
+    }
+
+    private void FixedUpdate()
+    {
+        
     }
 
     public void TakeDamage(GameObject attacker, int damage)

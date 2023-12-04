@@ -1,99 +1,41 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections;
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.AI;
 
-public class Guard : AICharacter
+public class Guard : MonoBehaviour
 {
-    [HideInInspector] public Weapon w_Weapon;
-
-    [SerializeField] private List<Transform> l_PatrolPoints;
-    [SerializeField] private float f_MinDistance;
-
-    [SerializeField] private float f_ChaseRange = 5;
-    [SerializeField] private float f_AttackRange = 2;
-    [SerializeField] private Transform t_attackTransform;
-    [SerializeField] private float f_attackRadius = 2f;
-
-    [SerializeField] private float f_alertedDuration = 3;
-    [SerializeField] private float f_alertRange = 15;
-
-    [SerializeField] private float maxWeaponDistance = 25;
-    [SerializeField] private AnimationCurve ac_DamageEvaluator;
-    [SerializeField] private AnimationCurve ac_DistanceEvaluator;
-    [SerializeField] private Transform t_weaponTransform;
-
-
-    [Range(-0.5f, 1f)]
-    [SerializeField] private float f_IsInsightRange;
-    [Range(-1f, 1f)]
-    [SerializeField] private float f_chasingInSightRange;
-
-    [SerializeField] private float f_AnimationFadeTime;
-
-    private Transform player;
-    private float currentInSightRange;
+    private BTBaseNode tree;
+    private NavMeshAgent agent;
+    private Animator animator;
 
     private void Awake()
     {
-        nma_Agent = GetComponent<NavMeshAgent>();
-        a_Animator = GetComponentInChildren<Animator>();
+        agent = GetComponent<NavMeshAgent>();
+        animator = GetComponentInChildren<Animator>();
     }
 
-    protected virtual void Start()
+    private void Start()
     {
-        base.Start();
-
-        List<Vector3> patrolPosPoints = l_PatrolPoints.Select(t => t.position).ToList();
-        Transform player = FindObjectOfType<Player>().transform;
-
-        IsSpotable is_PlayerSpottable = player.GetComponent<IsSpotable>();
-
-        BTBaseNode returnToPatrol = new BTSequence(b_BlackBoard, new BTMoveToBlackBoardPosition(b_BlackBoard, "Initial Position", 0), new BTPatrolNode(b_BlackBoard, f_MinDistance, patrolPosPoints.ToArray()));
-
-        BTBaseNode patrolTree = new BTSequence(b_BlackBoard, new BTTargetSpot(b_BlackBoard, is_PlayerSpottable, false), new BTAnimate(b_BlackBoard, "Rifle Walk", f_AnimationFadeTime), new BTPatrolNode(b_BlackBoard, f_MinDistance, patrolPosPoints.ToArray()));
-
-        BTBaseNode attackSequence = new BTSequence(b_BlackBoard, new BTIsTargetInRange(b_BlackBoard, player, f_AttackRange), new BTSequence(b_BlackBoard, new BTAnimate(b_BlackBoard, "Kick"), new BTWaitOnAnimationEnd(b_BlackBoard)));
-
-        BTBaseNode chasingTree = new BTParallel(b_BlackBoard, new BTTargetFollow(b_BlackBoard, player, f_AttackRange), attackSequence);
-
-        BTBaseNode whileInSight = new BTConditionDecorator(b_BlackBoard, new BTIsTargetInSight(b_BlackBoard, player, f_IsInsightRange), chasingTree);
-
-        BTBaseNode findWeaponSequence = new BTSequence(b_BlackBoard,
-            new BTIsTargetInRange(b_BlackBoard, player, f_ChaseRange),
-            new BTIsTargetInSight(b_BlackBoard, player, f_IsInsightRange),
-            new BTTargetSpot(b_BlackBoard, is_PlayerSpottable, true),
-            new BTSelector(b_BlackBoard,
-                new BTSequence(b_BlackBoard,
-                    new BTInvert(b_BlackBoard,
-                        new BTWeaponTaken(b_BlackBoard, this)
-                    ),
-                    new BTWeaponSeeker(b_BlackBoard, maxWeaponDistance),
-                    new BTMoveToBlackBoardPosition(b_BlackBoard, "Best Weapon Position", f_MinDistance),
-                    new BTPickupWeapon(b_BlackBoard),
-                    whileInSight
-                )
-            )
-        );
-
-        bbn_Tree = new BTSelector(b_BlackBoard, patrolTree, attackSequence, findWeaponSequence, chasingTree, whileInSight, returnToPatrol);
-
-        //bbn_Tree = findWeaponSequence;
+        //Create your Behaviour Tree here!
     }
 
-    protected override void InitializeBlackBoard()
+    private void FixedUpdate()
     {
-        b_BlackBoard = new Blackboard();
-
-        b_BlackBoard.AddOrUpdate("Base", this);
-        b_BlackBoard.AddOrUpdate("ControllerTransform", transform);
-        b_BlackBoard.AddOrUpdate("Agent", nma_Agent);
-        b_BlackBoard.AddOrUpdate("Animator", a_Animator);
-
-        b_BlackBoard.AddOrUpdate("DistanceCurve", ac_DistanceEvaluator);
-        b_BlackBoard.AddOrUpdate("DamageCurve", ac_DamageEvaluator);
-
-        b_BlackBoard.AddOrUpdate("AttackRange", f_AttackRange);
+        tree?.Run();
     }
+
+    //private void OnDrawGizmos()
+    //{
+    //    Gizmos.color = Color.yellow;
+    //    Handles.color = Color.yellow;
+    //    Vector3 endPointLeft = viewTransform.position + (Quaternion.Euler(0, -ViewAngleInDegrees.Value, 0) * viewTransform.transform.forward).normalized * SightRange.Value;
+    //    Vector3 endPointRight = viewTransform.position + (Quaternion.Euler(0, ViewAngleInDegrees.Value, 0) * viewTransform.transform.forward).normalized * SightRange.Value;
+
+    //    Handles.DrawWireArc(viewTransform.position, Vector3.up, Quaternion.Euler(0, -ViewAngleInDegrees.Value, 0) * viewTransform.transform.forward, ViewAngleInDegrees.Value * 2, SightRange.Value);
+    //    Gizmos.DrawLine(viewTransform.position, endPointLeft);
+    //    Gizmos.DrawLine(viewTransform.position, endPointRight);
+
+    //}
 }
