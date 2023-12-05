@@ -20,6 +20,9 @@ public class BTPickupWeapon : BTBaseNode
         if (weaponTarget != null)
         {
             // Implement logic to pick up the weapon
+            Debug.Log("Picking up weapon!");
+
+            // You can add your specific logic here for picking up the weapon
 
             return TaskStatus.Success;
         }
