@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Assertions.Must;
 
-public class Player : Character, IDamageable, ISpottable
+public class Player : Character, IDamageable
 {
     public Transform Camera;
     [SerializeField] private float rotationSpeed = 180f;
@@ -17,7 +17,6 @@ public class Player : Character, IDamageable, ISpottable
     private Vector3 moveDirection;
     private Collider mainCollider;
 
-    public bool isSpotted => spotters.Count > 0;
     public List<GameObject> spotters { get; private set; } = new List<GameObject>();
 
     void Start()
@@ -106,21 +105,6 @@ public class Player : Character, IDamageable, ISpottable
         if (!animator.GetCurrentAnimatorStateInfo(0).IsName(animationName) && !animator.IsInTransition(0))
         {
             animator.CrossFade(animationName, fadeTime);
-        }
-    }
-
-    public void Spot(GameObject _spotter, bool _spotted)
-    {
-        if (_spotted)
-        {
-            spotters.Add(_spotter);
-        }
-        else
-        {
-            if (spotters.Contains(_spotter))
-            {
-                spotters.Remove(_spotter);
-            }
         }
     }
 }

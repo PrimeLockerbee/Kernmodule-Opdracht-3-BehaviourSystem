@@ -14,15 +14,14 @@ public class Guard : AICharacter
 
     [SerializeField] private float animationFadeTime;
 
-    private Transform player;
     private float currentInSightRange;
 
     [Range(-0.5f, 1f)]
     [SerializeField] private float patrollingInSightRange;
-    [Range(-1f, 1f)]
-    [SerializeField] private float chasingInSightRange;
 
-    [SerializeField] private float chaseRange = 5;
+    [SerializeField] private float spotPlayerRange;
+
+    private Transform player;
 
     private void Awake()
     {
@@ -36,8 +35,6 @@ public class Guard : AICharacter
         base.Start();
         currentInSightRange = patrollingInSightRange;
 
-        ISpottable playerSpottable = player.GetComponent<ISpottable>();
-
         BTBaseNode patrolNode = GeneratePatrolNode();
 
         BTBaseNode patrolTree = new BTSequence(blackBoard,
@@ -46,12 +43,7 @@ public class Guard : AICharacter
                             new BTAnimate(blackBoard, "Rifle Walk", animationFadeTime),
                             patrolNode);
 
-        BTBaseNode playerInGuardSight = new BTSequence(blackBoard, new BTIsTargetInRange(blackBoard, player, chaseRange),
-                                                new BTIsTargetInSight(blackBoard, player, currentInSightRange),
-                                                new BTSpotTarget(blackBoard, playerSpottable, true));
-
         tree = new BTSelector(blackBoard,
-              playerInGuardSight,
               patrolTree
               );
 
@@ -79,7 +71,6 @@ public class Guard : AICharacter
     {
         blackBoard = new Blackboard();
 
-        // Components
         blackBoard.AddOrUpdate("Base", this);
         blackBoard.AddOrUpdate("ControllerObject", gameObject);
         blackBoard.AddOrUpdate("ControllerTransform", transform);
