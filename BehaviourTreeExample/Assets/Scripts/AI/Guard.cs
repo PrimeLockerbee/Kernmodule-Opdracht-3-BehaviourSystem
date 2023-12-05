@@ -37,6 +37,25 @@ public class Guard : AICharacter
 
         BTBaseNode patrolNode = GeneratePatrolNode();
 
+        BTBaseNode attackSequence = new BTSequence(b_BlackBoard, new BTIsTargetInRange(b_BlackBoard, player, f_AttackRange), new BTSequence(b_BlackBoard, new BTAnimate(b_BlackBoard, "Kick"), new BTWaitOnAnimationEnd(b_BlackBoard)));
+        BTBaseNode chasingTree = new BTParallel(b_BlackBoard, new BTTargetFollow(b_BlackBoard, player, f_AttackRange), attackSequence);
+        BTBaseNode whileInSight = new BTConditionDecorator(b_BlackBoard, new BTIsTargetInSight(b_BlackBoard, player, f_IsInsightRange), chasingTree);
+        BTBaseNode findWeaponSequence = new BTSequence(b_BlackBoard,
+                                            new BTIsTargetInRange(b_BlackBoard, player, f_ChaseRange),
+                                            new BTIsTargetInSight(b_BlackBoard, player, f_IsInsightRange),
+                                            new BTTargetSpot(b_BlackBoard, is_PlayerSpottable, true),
+                                            new BTSelector(b_BlackBoard,
+                                                new BTSequence(b_BlackBoard,
+                                                    new BTInvert(b_BlackBoard,
+                                                        new BTWeaponTaken(b_BlackBoard, this)
+                                                    ),
+                                                    new BTWeaponSeeker(b_BlackBoard, maxWeaponDistance),
+                                                    new BTMoveToBlackBoardPosition(b_BlackBoard, "Best Weapon Position", f_MinDistance),
+                                                    new BTPickupWeapon(b_BlackBoard),
+                                                    whileInSight
+                                                )
+                                            ));
+
         BTBaseNode patrolTree = new BTSequence(blackBoard,
                             new BTChangeBlackBoardVariable(blackBoard, "StateMessage", "Patrolling"),
                             new BTInvokeAction(blackBoard, () => currentInSightRange = patrollingInSightRange),
