@@ -4,31 +4,42 @@ using UnityEngine;
 
 public class BTPickupWeapon : BTBaseNode
 {
-    public override string displayName => "Picking up Weapon";
+    public override string displayName => "Picking up weapon";
 
-    private readonly System.Func<Transform> weaponTargetFunc;
+    private Guard guardReference;
+    private Transform weaponTransform;
 
-    public BTPickupWeapon(Blackboard blackboard, System.Func<Transform> _weaponTargetFunc) : base(blackboard)
+    public BTPickupWeapon(Blackboard _blackboard, Transform _weaponTransform) : base(_blackboard)
     {
-        weaponTargetFunc = _weaponTargetFunc;
+        guardReference = blackboard.Get<Guard>("Base");
+        weaponTransform = _weaponTransform;
+    }
+
+    public override TaskStatus OnEnter()
+    {
+        guardReference.weapon = weaponTransform.GetComponent<Weapon>();
+
+        if (guardReference.weapon == null)
+            return TaskStatus.Failed;
+        else
+        {
+            Rigidbody rb = guardReference.weapon.GetComponent<Rigidbody>();
+            if (rb != null) rb.useGravity = false;
+
+            // Assuming the weapon is a child of a weapon holder object
+            Transform weaponHolder = weaponTransform.parent;
+            weaponTransform.parent = null;
+            weaponTransform.rotation = Quaternion.identity;
+
+            if (weaponHolder != null)
+                weaponHolder.gameObject.SetActive(false);
+
+            return TaskStatus.Success;
+        }
     }
 
     public override TaskStatus OnUpdate()
     {
-        Transform weaponTarget = weaponTargetFunc.Invoke();
-
-        if (weaponTarget != null)
-        {
-            // Implement logic to pick up the weapon
-            Debug.Log("Picking up weapon!");
-
-            // You can add your specific logic here for picking up the weapon
-
-            return TaskStatus.Success;
-        }
-        else
-        {
-            return TaskStatus.Failed;
-        }
+        return TaskStatus.Success;
     }
 }

@@ -17,9 +17,20 @@ public class BTSpotTarget : BTBaseNode
 
     public override TaskStatus OnEnter()
     {
-        if (spottable == null) return TaskStatus.Failed;
+        if (spottable == null)
+        {
+            Debug.LogError("Spottable is null in BTSpotTarget.");
+            return TaskStatus.Failed;
+        }
+
+        if (thisGameObject == null)
+        {
+            Debug.LogError("ThisGameObject is null in BTSpotTarget.");
+            return TaskStatus.Failed;
+        }
 
         spottable.Spot(thisGameObject, spotted);
+        Debug.Log("Target spotted!");
         return base.OnEnter();
     }
 

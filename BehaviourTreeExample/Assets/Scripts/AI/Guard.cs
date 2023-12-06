@@ -7,21 +7,25 @@ using UnityEngine.AI;
 
 public class Guard : AICharacter
 {
-    public bool isAlerted { get; private set; }
+    public Weapon weapon { get; set; }
 
     [SerializeField] private List<Transform> patrolPoints;
     [SerializeField] private float minDistance;
 
     [SerializeField] private float animationFadeTime;
 
-    private float currentInSightRange;
+    private float currentInSightRange = 20.0f;
 
     [Range(-0.5f, 1f)]
     [SerializeField] private float patrollingInSightRange;
+    [Range(-1f, 1f)]
+    [SerializeField] private float chasingInSightRange;
 
-    [SerializeField] private float spotPlayerRange;
+    [SerializeField] private float chaseRange = 10.0f;
 
     private Transform player;
+
+    [SerializeField] private float maxWeaponDistance = 25;
 
     private void Awake()
     {
@@ -35,27 +39,50 @@ public class Guard : AICharacter
         base.Start();
         currentInSightRange = patrollingInSightRange;
 
+        ISpottable playerSpottable = player.GetComponent<ISpottable>();
+
+        BTBaseNode moveToWeapon = new BTMoveToWeapon(blackBoard, maxWeaponDistance);
+        BTBaseNode pickUpWeapon = new BTPickupWeapon(blackBoard);
+
+        BTBaseNode checkForWeapon = new BTCheckForWeapon(blackBoard);
+
+        BTBaseNode checkPlayerInSight = new BTSequence(blackBoard,
+                   new BTCustomCondition(blackBoard, () => player.gameObject.activeSelf),
+                   new BTIsTargetInRange(blackBoard, player, chaseRange),
+                   new BTIsTargetInSight(blackBoard, player, currentInSightRange),
+                   new BTSpotTarget(blackBoard, playerSpottable, true),
+                   checkForWeapon
+                   );
+
         BTBaseNode patrolNode = GeneratePatrolNode();
-        BTBaseNode attackPlayerNode = GenerateAttackPlayerNode();
-        BTBaseNode returnToPatrolNode = GenerateReturnToPatrolNode();
 
         BTBaseNode patrolTree = new BTSequence(blackBoard,
-                            new BTChangeBlackBoardVariable(blackBoard, "StateMessage", "Patrolling"),
-                            new BTInvokeAction(blackBoard, () => currentInSightRange = patrollingInSightRange),
-                            new BTAnimate(blackBoard, "Rifle Walk", animationFadeTime),
-                            patrolNode);
+                   new BTChangeBlackBoardVariable(blackBoard, "StateMessage", "Patrolling"),
+                   new BTInvokeAction(blackBoard, () => currentInSightRange = patrollingInSightRange),
+                   new BTAnimate(blackBoard, "Rifle Walk", animationFadeTime),
+                   patrolNode
+                   );
 
-        tree = new BTSelector(blackBoard,
-               attackPlayerNode,
-               returnToPatrolNode,
-               patrolNode
-              );
-
+        tree = new BTParralel(blackBoard,
+               new BTSelector(blackBoard,
+               checkPlayerInSight,
+               patrolTree
+               ),
+               new BTSelector(blackBoard,
+               new BTSequence(blackBoard,
+               new BTIsTargetInSight(blackBoard, player, currentInSightRange),
+               new BTSequence(blackBoard,
+               new BTSpotTarget(blackBoard, playerSpottable, true))),
+               new BTSpotTarget(blackBoard, playerSpottable, false))
+               );
     }
 
     protected override void FixedUpdate()
     {
         base.FixedUpdate();
+
+        // Update ControllerTransform in the blackboard
+        blackBoard.AddOrUpdate("ControllerTransform", transform);
     }
 
     private BTBaseNode GeneratePatrolNode()
@@ -71,33 +98,6 @@ public class Guard : AICharacter
         return new BTSequenceNoReset(blackBoard, children);
     }
 
-    private BTBaseNode GenerateReturnToPatrolNode()
-    {
-        Vector3 originalPatrolPosition = blackBoard.Get<Vector3>("OriginalPatrolPosition");
-
-        BTBaseNode returnToPatrol = new BTMoveToPosition(blackBoard, originalPatrolPosition, minDistance);
-
-        return new BTSequence(blackBoard,
-            new BTChangeBlackBoardVariable(blackBoard, "StateMessage", "ReturningToPatrol"),
-            returnToPatrol
-        );
-    }
-
-    private BTBaseNode GenerateAttackPlayerNode()
-    {
-        BTBaseNode checkForWeapon = new BTCheckForWeapon(blackBoard);
-        BTBaseNode moveToPlayer = new BTMoveToPosition(blackBoard, player.position, minDistance);
-        float attackRange = 10.0f; // Replace with actual attack range
-        BTBaseNode attackPlayer = new BTIsTargetInRange(blackBoard, player.transform, attackRange);
-
-        return new BTSequence(blackBoard,
-            new BTChangeBlackBoardVariable(blackBoard, "StateMessage", "SearchingForWeapon"),
-            checkForWeapon,
-            moveToPlayer,
-            attackPlayer
-        );
-    }
-
     protected override void InitializeBlackboard()
     {
         blackBoard = new Blackboard();
@@ -109,5 +109,10 @@ public class Guard : AICharacter
         blackBoard.AddOrUpdate("Animator", animator);
 
         blackBoard.AddOrUpdate("OriginalPatrolPosition", transform.position);
+
+        float maxWeaponSearchDistance = 15.0f;
+        blackBoard.AddOrUpdate("MaxSearchDistance", maxWeaponSearchDistance);
+
+        blackBoard.AddOrUpdate("HasFoundWeapon", false);
     }
 }

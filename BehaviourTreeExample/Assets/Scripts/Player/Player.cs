@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Assertions.Must;
 
-public class Player : Character, IDamageable
+public class Player : Character, ISpottable
 {
     public Transform Camera;
     [SerializeField] private float rotationSpeed = 180f;
@@ -18,6 +18,8 @@ public class Player : Character, IDamageable
     private Collider mainCollider;
 
     public List<GameObject> spotters { get; private set; } = new List<GameObject>();
+
+    public bool isSpotted => spotters.Count > 0;
 
     void Start()
     {
@@ -61,7 +63,7 @@ public class Player : Character, IDamageable
 
     private void FixedUpdate()
     {
-        
+
     }
 
     public void TakeDamage(GameObject attacker, int damage)
@@ -79,7 +81,7 @@ public class Player : Character, IDamageable
         {
             rib.isKinematic = false;
             rib.useGravity = true;
-            rib.AddForce(Vector3.Scale(new Vector3(1,0.5f,1),(transform.position - attacker.transform.position).normalized * deathForce));
+            rib.AddForce(Vector3.Scale(new Vector3(1, 0.5f, 1), (transform.position - attacker.transform.position).normalized * deathForce));
         }
         ragdoll.transform.SetParent(null);
 
@@ -89,13 +91,13 @@ public class Player : Character, IDamageable
     private void GetComponentsRecursively<T>(GameObject obj, ref List<T> components)
     {
         T component = obj.GetComponent<T>();
-        if(component != null)
+        if (component != null)
         {
             components.Add(component);
         }
-        foreach(Transform t in obj.transform)
+        foreach (Transform t in obj.transform)
         {
-            if(t.gameObject == obj) { continue; }
+            if (t.gameObject == obj) { continue; }
             GetComponentsRecursively<T>(t.gameObject, ref components);
         }
     }
@@ -105,6 +107,22 @@ public class Player : Character, IDamageable
         if (!animator.GetCurrentAnimatorStateInfo(0).IsName(animationName) && !animator.IsInTransition(0))
         {
             animator.CrossFade(animationName, fadeTime);
+        }
+    }
+
+    public void Spot(GameObject _spotter, bool _spotted)
+    {
+        Debug.Log("Spot method called.");
+        if (_spotted)
+        {
+            spotters.Add(_spotter);
+        }
+        else
+        {
+            if (spotters.Contains(_spotter))
+            {
+                spotters.Remove(_spotter);
+            }
         }
     }
 }

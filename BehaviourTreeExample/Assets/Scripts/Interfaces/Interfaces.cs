@@ -3,8 +3,8 @@ using UnityEngine;
 
 public interface ISpottable
 {
-    public bool isSpotted { get; }
-    public List<GameObject> spotters { get; }
+    bool isSpotted { get; }
+    List<GameObject> spotters { get; }
 
-    public void Spot(GameObject _spotter, bool _spotted);
+    void Spot(GameObject _spotter, bool _spotted);
 }

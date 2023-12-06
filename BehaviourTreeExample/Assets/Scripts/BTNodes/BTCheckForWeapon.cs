@@ -6,7 +6,7 @@ public class BTCheckForWeapon : BTBaseNode
 {
     public override string displayName => "Checking for weapon";
 
-    public BTCheckForWeapon(Blackboard blackboard) : base(blackboard)
+    public BTCheckForWeapon(Blackboard _blackBoard) : base(_blackBoard)
     {
     }
 
@@ -16,41 +16,61 @@ public class BTCheckForWeapon : BTBaseNode
 
         if (weaponTarget != null)
         {
-            // Determine the weapon target position
             Vector3 weaponTargetPosition = DetermineWeaponTargetPosition(weaponTarget);
-
-            // Store the weapon target position in the blackboard
             blackboard.AddOrUpdate("WeaponTargetPosition", weaponTargetPosition);
+            blackboard.AddOrUpdate("WeaponType", weaponTarget.GetComponent<Weapon>());
+            blackboard.AddOrUpdate("HasFoundWeapon", true); // Update the flag
 
-            // Now you have the weapon target and its position
-            // You can perform other actions or use this information in your behavior tree
-
+            Debug.Log("Weapon found!");
             return TaskStatus.Success;
         }
         else
         {
+            Debug.Log("No weapon found.");
             return TaskStatus.Failed;
         }
     }
 
     private Vector3 DetermineWeaponTargetPosition(Transform weaponTransform)
     {
-        // Assuming the weaponTransform.position is the position you want to use
         return weaponTransform.position;
     }
 
     private Transform FindWeapon()
     {
-        // Implement your logic to find the weapon
-        // For example, you might use Physics.Raycast or other methods
+        Transform controllerTransform = blackboard.Get<Transform>("ControllerTransform");
+        float maxSearchDistance = blackboard.Get<float>("MaxSearchDistance");
+        float searchRadius = 50.0f; // Adjust the radius based on your game's requirements
 
-        RaycastHit hit;
-        if (Physics.Raycast(blackboard.Get<Transform>("ControllerTransform").position,
-                            blackboard.Get<Transform>("ControllerTransform").forward, out hit))
+        Collider[] colliders = Physics.OverlapSphere(controllerTransform.position, searchRadius);
+
+        Transform closestWeapon = null;
+        float closestDistance = float.MaxValue;
+
+        foreach (var collider in colliders)
         {
-            return hit.transform;
+            if (collider.CompareTag("Weapon"))
+            {
+                float distance = Vector3.Distance(controllerTransform.position, collider.transform.position);
+
+                // Check if this weapon is closer than the current closest weapon
+                if (distance < closestDistance)
+                {
+                    closestWeapon = collider.transform;
+                    closestDistance = distance;
+                }
+            }
         }
 
-        return null;
+        if (closestWeapon != null)
+        {
+            Debug.Log("Closest weapon found!");
+            return closestWeapon;
+        }
+        else
+        {
+            Debug.Log("No weapon found.");
+            return null;
+        }
     }
 }
