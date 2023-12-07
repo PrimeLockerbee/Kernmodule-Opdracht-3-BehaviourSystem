@@ -4,35 +4,25 @@ using UnityEngine;
 
 public class BTPickupWeapon : BTBaseNode
 {
-    public override string displayName => "Picking up weapon";
+    public override string displayName => "Picking up Weapon";
 
-    private Guard guardReference;
-    private Transform weaponTransform;
+    Guard guardReference;
 
-    public BTPickupWeapon(Blackboard _blackboard, Transform _weaponTransform) : base(_blackboard)
+    public BTPickupWeapon(Blackboard _blackboard) : base(_blackboard)
     {
         guardReference = blackboard.Get<Guard>("Base");
-        weaponTransform = _weaponTransform;
     }
 
     public override TaskStatus OnEnter()
     {
-        guardReference.weapon = weaponTransform.GetComponent<Weapon>();
+        Weapon weapon = blackboard.Get<Weapon>("BestWeapon");
+        guardReference.weapon = weapon;
 
-        if (guardReference.weapon == null)
-            return TaskStatus.Failed;
+        if (weapon == null) return TaskStatus.Failed;
         else
         {
-            Rigidbody rb = guardReference.weapon.GetComponent<Rigidbody>();
-            if (rb != null) rb.useGravity = false;
-
-            // Assuming the weapon is a child of a weapon holder object
-            Transform weaponHolder = weaponTransform.parent;
-            weaponTransform.parent = null;
-            weaponTransform.rotation = Quaternion.identity;
-
-            if (weaponHolder != null)
-                weaponHolder.gameObject.SetActive(false);
+            // Deactivate the weapon and its parent object
+            weapon.gameObject.SetActive(false);
 
             return TaskStatus.Success;
         }
@@ -40,6 +30,8 @@ public class BTPickupWeapon : BTBaseNode
 
     public override TaskStatus OnUpdate()
     {
+        // The guard has successfully picked up the weapon
         return TaskStatus.Success;
     }
+
 }

@@ -7,17 +7,17 @@ public class BTMoveToWeapon : BTBaseNode
 {
     public override string displayName => "Moving to weapon";
 
-    private Transform weaponTransform;
     private NavMeshAgent agent;
 
-    public BTMoveToWeapon(Blackboard _blackBoard, Transform _weaponTransform) : base(_blackBoard)
+    public BTMoveToWeapon(Blackboard _blackBoard) : base(_blackBoard)
     {
-        weaponTransform = _weaponTransform;
         agent = blackboard.Get<NavMeshAgent>("Agent");
     }
 
     public override TaskStatus OnUpdate()
     {
+        Transform weaponTransform = blackboard.Get<Transform>("WeaponTargetPosition");
+
         if (weaponTransform != null)
         {
             agent.SetDestination(weaponTransform.position);

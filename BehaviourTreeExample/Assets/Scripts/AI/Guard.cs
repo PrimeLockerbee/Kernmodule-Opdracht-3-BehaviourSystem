@@ -21,11 +21,9 @@ public class Guard : AICharacter
     [Range(-1f, 1f)]
     [SerializeField] private float chasingInSightRange;
 
-    [SerializeField] private float chaseRange = 10.0f;
+    [SerializeField] private float chaseRange = 5;
 
     private Transform player;
-
-    [SerializeField] private float maxWeaponDistance = 25;
 
     private void Awake()
     {
@@ -41,18 +39,6 @@ public class Guard : AICharacter
 
         ISpottable playerSpottable = player.GetComponent<ISpottable>();
 
-        BTBaseNode moveToWeapon = new BTMoveToWeapon(blackBoard, maxWeaponDistance);
-        BTBaseNode pickUpWeapon = new BTPickupWeapon(blackBoard);
-
-        BTBaseNode checkForWeapon = new BTCheckForWeapon(blackBoard);
-
-        BTBaseNode checkPlayerInSight = new BTSequence(blackBoard,
-                   new BTCustomCondition(blackBoard, () => player.gameObject.activeSelf),
-                   new BTIsTargetInRange(blackBoard, player, chaseRange),
-                   new BTIsTargetInSight(blackBoard, player, currentInSightRange),
-                   new BTSpotTarget(blackBoard, playerSpottable, true),
-                   checkForWeapon
-                   );
 
         BTBaseNode patrolNode = GeneratePatrolNode();
 
@@ -63,17 +49,16 @@ public class Guard : AICharacter
                    patrolNode
                    );
 
-        tree = new BTParralel(blackBoard,
-               new BTSelector(blackBoard,
-               checkPlayerInSight,
-               patrolTree
-               ),
-               new BTSelector(blackBoard,
-               new BTSequence(blackBoard,
-               new BTIsTargetInSight(blackBoard, player, currentInSightRange),
-               new BTSequence(blackBoard,
-               new BTSpotTarget(blackBoard, playerSpottable, true))),
-               new BTSpotTarget(blackBoard, playerSpottable, false))
+        BTBaseNode checkPlayerInSight = new BTSequence(blackBoard,
+                                        new BTCustomCondition(blackBoard, () => player.gameObject.activeSelf),
+                                        new BTIsTargetInRange(blackBoard, player, chaseRange),
+                                        new BTIsTargetInSight(blackBoard, player, currentInSightRange),
+                                        new BTSpotTarget(blackBoard, playerSpottable, true)
+                                        );
+
+        tree = new BTSelector(blackBoard,
+            checkPlayerInSight,
+            patrolTree
                );
     }
 
@@ -81,8 +66,8 @@ public class Guard : AICharacter
     {
         base.FixedUpdate();
 
-        // Update ControllerTransform in the blackboard
-        blackBoard.AddOrUpdate("ControllerTransform", transform);
+        // Debug the ControllerTransform
+        //Debug.Log("Guard ControllerTransform: " + blackBoard.Get<Transform>("ControllerTransform").transform.position);
     }
 
     private BTBaseNode GeneratePatrolNode()
@@ -107,12 +92,5 @@ public class Guard : AICharacter
         blackBoard.AddOrUpdate("ControllerTransform", transform);
         blackBoard.AddOrUpdate("Agent", agent);
         blackBoard.AddOrUpdate("Animator", animator);
-
-        blackBoard.AddOrUpdate("OriginalPatrolPosition", transform.position);
-
-        float maxWeaponSearchDistance = 15.0f;
-        blackBoard.AddOrUpdate("MaxSearchDistance", maxWeaponSearchDistance);
-
-        blackBoard.AddOrUpdate("HasFoundWeapon", false);
     }
 }
